@@ -33,7 +33,7 @@ pub struct DownloadResult {
 }
 
 pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, max_len: Option<usize>) -> Result<T::Output> {
-    const CHUNK_LEN: usize = 10485760; // 10M
+    const CHUNK_LEN: usize = 10 * 1024 * 1024; // 10MB
 
     let file = File::open(path).map_err(Error::OpenFile)?;
     let file_len = file.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
