@@ -76,8 +76,6 @@ where
         _ => {}
     }
 
-    println!("writing to {}", path.display());
-
     let mut file = File::create(path).map_err(Error::CreateFile)?;
 
     res.copy_to(&mut file).map_err(Error::WriteResponse)?;
