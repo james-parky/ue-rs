@@ -113,13 +113,7 @@ impl<'a> Package<'a> {
         info!("downloading {}...", self.url);
 
         let path = into_dir.join(&*self.name);
-        match download_and_hash(
-            client,
-            self.url.clone(),
-            &path,
-            self.hash_sha256.clone(),
-            self.hash_sha1.clone(),
-        ) {
+        match download_and_hash(client, self.url.clone(), &path, self.hash_sha256, self.hash_sha1) {
             Err(err) => {
                 self.status = PackageStatus::DownloadFailed;
                 Err(err)
