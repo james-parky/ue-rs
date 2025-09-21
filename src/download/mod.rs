@@ -230,10 +230,10 @@ impl DownloadVerify {
         if self.payload_url.is_some() {
             let url = self.payload_url.clone().unwrap();
             let u = Url::parse(&url).map_err(Error::ParseUrl)?;
-            let fname = u.path_segments().ok_or(Error::GetPathSegments(u.clone()))?.next_back().ok_or(Error::GetPathSegments(u.clone()))?;
+            let file_name = u.path_segments().ok_or(Error::GetPathSegments(u.clone()))?.next_back().ok_or(Error::GetPathSegments(u.clone()))?;
             let mut pkg_fake: Package;
 
-            let temp_payload_path = unverified_dir.join(fname);
+            let temp_payload_path = unverified_dir.join(file_name);
             pkg_fake = fetch_url_to_file(&temp_payload_path, u, &client)?;
             do_download_verify(
                 &mut pkg_fake,
@@ -244,23 +244,15 @@ impl DownloadVerify {
                 &client,
             )?;
 
-            // verify only a fake package, early exit and skip the rest.
+            // Verify only a fake package, early exit and skip the rest.
             return Ok(());
         }
 
-        ////
-        // parse response
-        ////
         let resp = omaha::Response::from_str(&self.input_xml).map_err(Error::ParseXmlResponse)?;
 
         let mut pkgs_to_dl = get_pkgs_to_download(&resp, &self.glob_set)?;
 
-        debug!("pkgs:\n\t{pkgs_to_dl:#?}");
-        debug!("");
-
-        ////
-        // download
-        ////
+        debug!("pkgs:\n\t{pkgs_to_dl:#?}\n");
 
         for pkg in pkgs_to_dl.iter_mut() {
             do_download_verify(
