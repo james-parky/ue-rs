@@ -156,7 +156,7 @@ impl<'a> Package<'a> {
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
-        let mut delta_archive_manifest = delta_update::get_manifest_bytes(&update_file, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
+        let delta_archive_manifest = delta_update::get_manifest_bytes(&update_file, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
@@ -173,7 +173,6 @@ impl<'a> Package<'a> {
         // Get length of header and data, including header and manifest.
         let header_data_length = delta_update::get_header_data_length(&header, &delta_archive_manifest).map_err(|_| Error::GetHeaderLength)?;
         let header_hash = self.hash_on_disk::<omaha::Sha256>(from_path, Some(header_data_length))?;
-        let header_hash_vec: Vec<u8> = header_hash.clone().into();
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
@@ -189,7 +188,7 @@ impl<'a> Package<'a> {
         }
 
         // Parse signature data from sig blobs, data blobs, public key, and verify.
-        match delta_update::parse_signature_data(&signature_bytes, header_hash_vec.as_slice(), pubkey_path) {
+        match delta_update::parse_signature_data(&signature_bytes, &header_hash, pubkey_path) {
             Ok(_) => {
                 println!("Parsed and verified signature data from file {from_path:?}");
                 self.status = PackageStatus::Verified;
