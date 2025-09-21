@@ -34,7 +34,18 @@ pub struct Package<'a> {
     pub status: PackageStatus,
 }
 
-impl Package<'_> {
+impl<'a> Package<'a> {
+    pub fn from_omaha_package(pkg: &'a omaha::response::Package<'a>, url: Url, status: PackageStatus) -> Self {
+        Self {
+            url,
+            name: Cow::Borrowed(&pkg.name),
+            hash_sha256: pkg.hash_sha256,
+            hash_sha1: pkg.hash,
+            size: pkg.size,
+            status,
+        }
+    }
+
     #[rustfmt::skip]
     // Return Sha256 hash of data in the given path.
     // If maxlen is None, a simple read to the end of the file.

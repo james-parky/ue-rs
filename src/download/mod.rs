@@ -118,37 +118,20 @@ fn get_pkgs_to_download<'a>(resp: &'a omaha::Response, glob_set: &GlobSet) -> Re
     Ok(resp
         .apps
         .iter()
-        .flat_map(|app| {
-            let manifest = &app.update_check.manifest;
-            manifest.packages.iter().filter_map(move |pkg| {
-                if !glob_set.is_match(&*pkg.name) {
-                    info!("package `{}` doesn't match glob pattern, skipping", pkg.name);
-                    return None;
-                }
+        .filter_map(|app| {
+            let url_base = app.update_check.urls.first()?;
 
-                let hash_sha256 = pkg.hash_sha256.as_ref();
-                let hash_sha1 = pkg.hash.as_ref();
-
-                // TODO: multiple URLs per package
-                //       not sure if nebraska sends us more than one right now but i suppose this is
-                //       for mirrors?
-                let url = app.update_check.urls.first()?.join(&pkg.name).ok()?;
-
-                if hash_sha256.is_none() && hash_sha1.is_none() {
-                    warn!("package `{}` doesn't have a valid SHA256 or SHA1 hash, skipping", pkg.name);
-                    return None;
-                }
-
-                Some(Package {
-                    url,
-                    name: Cow::Borrowed(&pkg.name),
-                    hash_sha256: hash_sha256.cloned(),
-                    hash_sha1: hash_sha1.cloned(),
-                    size: pkg.size,
-                    status: PackageStatus::ToDownload,
-                })
-            })
+            Some(
+                app.update_check
+                    .manifest
+                    .packages
+                    .iter()
+                    .filter(|pkg| glob_set.is_match(pkg.name.as_ref()))
+                    .filter(|pkg| pkg.hash.is_some() || pkg.hash_sha256.is_some())
+                    .filter_map(|pkg| url_base.join(&pkg.name).ok().map(|url| Package::from_omaha_package(pkg, url, PackageStatus::ToDownload))),
+            )
         })
+        .flatten()
         .collect())
 }
 
