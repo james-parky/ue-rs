@@ -156,7 +156,7 @@ impl<'a> Package<'a> {
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
-        let delta_archive_manifest = delta_update::get_manifest_bytes(&update_file, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
+        let mut delta_archive_manifest = delta_update::get_manifest_bytes(&update_file, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
