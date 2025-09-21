@@ -214,7 +214,6 @@ impl DownloadVerify {
         const HTTP_CONN_TIMEOUT: u64 = 20;
 
         let output_dir = Path::new(&self.output_dir);
-
         let unverified_dir = output_dir.join(UNVERIFIED_SUFFIX);
         let temp_dir = output_dir.join(TMP_SUFFIX);
         fs::create_dir_all(&unverified_dir).map_err(Error::CreateDirAll)?;
