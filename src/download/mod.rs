@@ -115,7 +115,7 @@ where
 }
 
 fn get_pkgs_to_download<'a>(resp: &'a omaha::Response, glob_set: &GlobSet) -> Result<Vec<Package<'a>>> {
-    let mut to_download: Vec<_> = Vec::new();
+    let mut to_download = Vec::new();
 
     for app in &resp.apps {
         let manifest = &app.update_check.manifest;
