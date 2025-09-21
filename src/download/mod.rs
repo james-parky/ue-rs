@@ -26,9 +26,6 @@ const MAX_DOWNLOAD_RETRY: u32 = 20;
 pub const TARGET_FILENAME_DEFAULT: &str = "oem-azure.gz";
 pub const PAYLOAD_URL_DEFAULT: &str = "https://update.release.flatcar-linux.net/amd64-usr/current/oem-azure.gz";
 
-const UNVERIFIED_SUFFIX: &str = ".unverified";
-const TMP_SUFFIX: &str = ".tmp";
-
 pub struct DownloadResult {
     pub hash_sha256: Sha256Digest,
     pub hash_sha1: Sha1Digest,
@@ -253,6 +250,9 @@ impl DownloadVerify {
     }
 
     pub fn run(&self) -> Result<()> {
+        const UNVERIFIED_SUFFIX: &str = ".unverified";
+        const TMP_SUFFIX: &str = ".tmp";
+
         let output_dir = Path::new(&self.output_dir);
 
         let unverified_dir = output_dir.join(UNVERIFIED_SUFFIX);
