@@ -62,13 +62,11 @@ where
     U: reqwest::IntoUrl + Clone,
     Url: From<U>,
 {
-    let client_url = url.clone();
-
-    let mut res = client.get(url.clone()).send().map_err(|err| Error::ClientSend(client_url.as_str().to_string(), err))?;
+    let mut res = client.get(url.clone()).send().map_err(|err| Error::ClientSend(url.as_str().to_string(), err))?;
 
     // Redirect was already handled at this point, so there is no need to touch
     // response or url again. Simply print info and continue.
-    if <U as Into<Url>>::into(client_url) != *res.url() {
+    if *res.url() != url.into() {
         info!("redirected to URL {:?}", res.url());
     }
 
