@@ -45,7 +45,7 @@ pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, max_len: Option<usize>) -> Re
 
     while remaining_bytes_to_read > 0 {
         if remaining_bytes_to_read < CHUNK_LEN {
-            // last and submaximal chunk to read, shrink the buffer for it
+            // Last and submaximal chunk to read, shrink the buffer for it
             buf.truncate(remaining_bytes_to_read);
         }
 
