@@ -112,17 +112,15 @@ impl<'a> Package<'a> {
 
         info!("downloading {}...", self.url);
 
-        let path = into_dir.join(&*self.name);
-        match download_and_hash(client, self.url.clone(), &path, self.hash_sha256, self.hash_sha1) {
-            Err(err) => {
-                self.status = PackageStatus::DownloadFailed;
-                Err(err)
-            }
-            _ => {
-                self.status = PackageStatus::Unverified;
-                Ok(())
-            }
-        }
+        download_and_hash(
+            client,
+            self.url.clone(),
+            &into_dir.join(&*self.name),
+            self.hash_sha256,
+            self.hash_sha1,
+        )
+        .inspect_err(|_| self.status = PackageStatus::DownloadFailed)
+        .map(|_| self.status = PackageStatus::Unverified)
     }
 
     fn verify_checksum(&mut self, calculated_sha256: Sha256Digest, calculated_sha1: Sha1Digest) -> bool {
