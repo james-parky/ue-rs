@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::fs::File;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use log::{debug, info};
@@ -57,13 +58,15 @@ impl<'a> Package<'a> {
     pub fn check_download(&mut self, in_dir: &Path) -> Result<()> {
         let path = in_dir.join(&*self.name);
 
-        if !path.exists() {
-            // Skip checking for existing downloads.
-            info!("{} does not exist, skipping existing downloads.", path.display());
-            return Ok(());
-        }
+        let size_on_disk = match path.metadata() {
+            Ok(md) => md.len() as usize,
+            Err(err) if err.kind() == io::ErrorKind::NotFound => {
+                info!("{} does not exist, skipping existing downloads.", path.display());
+                return Ok(());
+            }
+            Err(err) => return Err(Error::ReadFileMetadata(err)),
+        };
 
-        let size_on_disk = path.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
         match size_on_disk.cmp(&self.size) {
             Ordering::Less => {
                 info!(
