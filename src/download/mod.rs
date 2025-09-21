@@ -33,15 +33,15 @@ pub struct DownloadResult {
 }
 
 pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, max_len: Option<usize>) -> Result<T::Output> {
-    let file = File::open(path).map_err(Error::OpenFile)?;
-    let file_len = file.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
-    let mut remaining_bytes_to_read = max_len.map_or(file_len, |len| len.min(file_len));
-    let mut hasher = T::new();
-
     const CHUNK_LEN: usize = 10485760; // 10M
 
+    let file = File::open(path).map_err(Error::OpenFile)?;
+    let file_len = file.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
+
+    let mut hasher = T::new();
     let mut reader = BufReader::new(file);
     let mut buf = vec![0u8; CHUNK_LEN];
+    let mut remaining_bytes_to_read = max_len.map_or(file_len, |len| len.min(file_len));
 
     while remaining_bytes_to_read > 0 {
         if remaining_bytes_to_read < CHUNK_LEN {
@@ -50,9 +50,7 @@ pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, max_len: Option<usize>) -> Re
         }
 
         reader.read_exact(&mut buf).map_err(|err| Error::ReadFileChunk(CHUNK_LEN, err))?;
-
         remaining_bytes_to_read -= buf.len();
-
         hasher.update(&buf);
     }
 
