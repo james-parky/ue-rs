@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -63,28 +64,30 @@ impl<'a> Package<'a> {
         }
 
         let size_on_disk = path.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
+        match size_on_disk.cmp(&self.size) {
+            Ordering::Less => {
+                info!(
+                    "{}: have downloaded {}/{} bytes, will resume",
+                    path.display(),
+                    size_on_disk,
+                    self.size
+                );
 
-        if size_on_disk < self.size {
-            info!(
-                "{}: have downloaded {}/{} bytes, will resume",
-                path.display(),
-                size_on_disk,
-                self.size
-            );
-
-            self.status = PackageStatus::DownloadIncomplete(size_on_disk);
-            return Ok(());
-        }
-
-        if size_on_disk == self.size {
-            info!("{}: download complete, checking hash...", path.display());
-            let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(&path, None)?;
-            let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(&path, None)?;
-            if self.verify_checksum(hash_sha256, hash_sha1) {
-                info!("{}: good hash, will continue without re-download", path.display());
-            } else {
-                info!("{}: bad hash, will re-download", path.display());
-                self.status = PackageStatus::ToDownload;
+                self.status = PackageStatus::DownloadIncomplete(size_on_disk);
+            }
+            Ordering::Equal => {
+                info!("{}: download complete, checking hash...", path.display());
+                let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(&path, None)?;
+                let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(&path, None)?;
+                if self.verify_checksum(hash_sha256, hash_sha1) {
+                    info!("{}: good hash, will continue without re-download", path.display());
+                } else {
+                    info!("{}: bad hash, will re-download", path.display());
+                    self.status = PackageStatus::ToDownload;
+                }
+            }
+            Ordering::Greater => {
+                // TODO: should probably return an error here
             }
         }
 
