@@ -91,17 +91,15 @@ impl<'a> Package<'a> {
                 );
 
                 self.status = PackageStatus::DownloadIncomplete(size_on_disk);
+                Ok(())
             }
             Ordering::Equal => {
                 info!("{}: download complete, checking hash...", path.display());
                 self.verify_download(&path)?;
+                Ok(())
             }
-            Ordering::Greater => {
-                // TODO: should probably return an error here
-            }
+            Ordering::Greater => Err(Error::UnexpectedFileSize(self.size, size_on_disk)),
         }
-
-        Ok(())
     }
 
     pub fn download(&mut self, into_dir: &Path, client: &Client) -> Result<()> {

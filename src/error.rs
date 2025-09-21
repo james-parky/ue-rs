@@ -40,6 +40,7 @@ pub enum Error {
     GetPathSegments(Url),
     ParseXmlResponse(hard_xml::XmlError),
     RemoveDirAll(std::io::Error),
+    UnexpectedFileSize(usize, usize),
 }
 
 impl std::error::Error for Error {}
@@ -90,6 +91,7 @@ impl<'a> Display for Error {
             Error::GetPathSegments(url) => write!(f, "failed to get path segments: {url:?}"),
             Error::ParseXmlResponse(xml) => write!(f, "failed to parse Response from xml: {xml:?}"),
             Error::RemoveDirAll(err) => write!(f, "failed to remove dir all: {err:?}"),
+            Error::UnexpectedFileSize(exp, on_disk) => write!(f, "package had expected size of {exp} but file has size of {on_disk}"),
         }
     }
 }
