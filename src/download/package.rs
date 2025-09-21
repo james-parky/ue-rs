@@ -57,29 +57,26 @@ impl<'a> Package<'a> {
         let path = in_dir.join(&*self.name);
 
         if !path.exists() {
-            // skip checking for existing downloads
+            // Skip checking for existing downloads.
             info!("{} does not exist, skipping existing downloads.", path.display());
             return Ok(());
         }
 
-        let md = path.metadata().map_err(Error::ReadFileMetadata)?;
+        let size_on_disk = path.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
 
-        let size_on_disk = md.len() as usize;
-        let expected_size = self.size;
-
-        if size_on_disk < expected_size {
+        if size_on_disk < self.size {
             info!(
                 "{}: have downloaded {}/{} bytes, will resume",
                 path.display(),
                 size_on_disk,
-                expected_size
+                self.size
             );
 
             self.status = PackageStatus::DownloadIncomplete(size_on_disk);
             return Ok(());
         }
 
-        if size_on_disk == expected_size {
+        if size_on_disk == self.size {
             info!("{}: download complete, checking hash...", path.display());
             let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(&path, None)?;
             let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(&path, None)?;
