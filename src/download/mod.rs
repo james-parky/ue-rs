@@ -115,45 +115,41 @@ where
 }
 
 fn get_pkgs_to_download<'a>(resp: &'a omaha::Response, glob_set: &GlobSet) -> Result<Vec<Package<'a>>> {
-    let mut to_download = Vec::new();
+    Ok(resp
+        .apps
+        .iter()
+        .flat_map(|app| {
+            let manifest = &app.update_check.manifest;
+            manifest.packages.iter().filter_map(move |pkg| {
+                if !glob_set.is_match(&*pkg.name) {
+                    info!("package `{}` doesn't match glob pattern, skipping", pkg.name);
+                    return None;
+                }
 
-    for app in &resp.apps {
-        let manifest = &app.update_check.manifest;
+                let hash_sha256 = pkg.hash_sha256.as_ref();
+                let hash_sha1 = pkg.hash.as_ref();
 
-        for pkg in &manifest.packages {
-            if !glob_set.is_match(&*pkg.name) {
-                info!("package `{}` doesn't match glob pattern, skipping", pkg.name);
-                continue;
-            }
+                // TODO: multiple URLs per package
+                //       not sure if nebraska sends us more than one right now but i suppose this is
+                //       for mirrors?
+                let url = app.update_check.urls.first()?.join(&pkg.name).ok()?;
 
-            let hash_sha256 = pkg.hash_sha256.as_ref();
-            let hash_sha1 = pkg.hash.as_ref();
+                if hash_sha256.is_none() && hash_sha1.is_none() {
+                    warn!("package `{}` doesn't have a valid SHA256 or SHA1 hash, skipping", pkg.name);
+                    return None;
+                }
 
-            // TODO: multiple URLs per package
-            //       not sure if nebraska sends us more than one right now but i suppose this is
-            //       for mirrors?
-            let Some(Ok(url)) = app.update_check.urls.first().map(|u| u.join(&pkg.name)) else {
-                warn!("can't get url for package `{}`, skipping", pkg.name);
-                continue;
-            };
-
-            if hash_sha256.is_none() && hash_sha1.is_none() {
-                warn!("package `{}` doesn't have a valid SHA256 or SHA1 hash, skipping", pkg.name);
-                continue;
-            }
-
-            to_download.push(Package {
-                url,
-                name: Cow::Borrowed(&pkg.name),
-                hash_sha256: hash_sha256.cloned(),
-                hash_sha1: hash_sha1.cloned(),
-                size: pkg.size,
-                status: PackageStatus::ToDownload,
-            });
-        }
-    }
-
-    Ok(to_download)
+                Some(Package {
+                    url,
+                    name: Cow::Borrowed(&pkg.name),
+                    hash_sha256: hash_sha256.cloned(),
+                    hash_sha1: hash_sha1.cloned(),
+                    size: pkg.size,
+                    status: PackageStatus::ToDownload,
+                })
+            })
+        })
+        .collect())
 }
 
 // Read data from remote URL into File
