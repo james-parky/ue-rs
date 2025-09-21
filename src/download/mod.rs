@@ -139,10 +139,12 @@ where
     U: reqwest::IntoUrl + From<U> + Clone + std::fmt::Debug,
     Url: From<U>,
 {
+    const FAKE_PACKAGE_FILENAME: &str = "fakepackage";
+
     let r = download_and_hash(client, input_url.clone(), path, None, None)?;
 
     Ok(Package {
-        name: Cow::Borrowed(path.file_name().unwrap_or(OsStr::new("fakepackage")).to_str().unwrap_or("fakepackage")),
+        name: Cow::Borrowed(path.file_name().and_then(|f| f.to_str()).unwrap_or(FAKE_PACKAGE_FILENAME)),
         hash_sha256: Some(r.hash_sha256),
         hash_sha1: Some(r.hash_sha1),
         size: r.data.metadata().map_err(Error::ReadFileMetadata)?.len() as usize,
