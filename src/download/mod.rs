@@ -87,10 +87,10 @@ where
 
     debug!("    expected sha256:   {expected_sha256:?}");
     debug!("    calculated sha256: {calculated_sha256:?}");
-    debug!("    sha256 match?      {}", expected_sha256 == Some(calculated_sha256.clone()));
+    debug!("    sha256 match?      {}", expected_sha256 == Some(calculated_sha256));
     debug!("    expected sha1:   {expected_sha1:?}");
     debug!("    calculated sha1: {calculated_sha1:?}");
-    debug!("    sha1 match?      {}", expected_sha1 == Some(calculated_sha1.clone()));
+    debug!("    sha1 match?      {}", expected_sha1 == Some(calculated_sha1));
 
     if let Some(exp) = expected_sha256.filter(|&sha256| sha256 != calculated_sha256) {
         return Err(Error::Sha256ChecksumMismatch(exp, calculated_sha256));
