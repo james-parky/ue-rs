@@ -147,59 +147,59 @@ impl<'a> Package<'a> {
     }
 
     pub fn verify_signature_on_disk(&mut self, from_path: &Path, pubkey_path: &str) -> Result<PathBuf> {
-        let upfile = File::open(from_path).map_err(Error::ReadFileMetadata)?;
+        let update_file = File::open(from_path).map_err(Error::ReadFileMetadata)?;
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
         // Read update payload from file, read delta update header from the payload.
-        let header = delta_update::read_delta_update_header(&upfile).map_err(|_| Error::ReadDeltaUpdateHeader)?;
+        let header = delta_update::read_delta_update_header(&update_file).map_err(|_| Error::ReadDeltaUpdateHeader)?;
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
-        let mut delta_archive_manifest = delta_update::get_manifest_bytes(&upfile, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
+        let mut delta_archive_manifest = delta_update::get_manifest_bytes(&update_file, &header).map_err(|_| Error::ReadDeltaUpdateHeader)?;
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
         // Extract signature from header.
-        let sigbytes = delta_update::get_signatures_bytes(&upfile, &header, &mut delta_archive_manifest).map_err(|_| Error::GetSignatureBytes)?;
+        let signature_bytes = delta_update::get_signatures_bytes(&update_file, &header, &mut delta_archive_manifest).map_err(|_| Error::GetSignatureBytes)?;
 
         // tmp dir == "/var/tmp/outdir/.tmp"
-        let tmpdirpathbuf = from_path.parent().ok_or(Error::GetParentDir)?.parent().ok_or(Error::GetParentDir)?.join(".tmp");
-        let tmpdir = tmpdirpathbuf.as_path();
-        let datablobspath = tmpdir.join("ue_data_blobs");
+        let tmp_dir_path = from_path.parent().ok_or(Error::GetParentDir)?.parent().ok_or(Error::GetParentDir)?.join(".tmp");
+        let temp_dir = tmp_dir_path.as_path();
+        let data_blob_path = temp_dir.join("ue_data_blobs");
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
         // Get length of header and data, including header and manifest.
         let header_data_length = delta_update::get_header_data_length(&header, &delta_archive_manifest).map_err(|_| Error::GetHeaderLength)?;
-        let hdhash = self.hash_on_disk::<omaha::Sha256>(from_path, Some(header_data_length))?;
-        let hdhashvec: Vec<u8> = hdhash.clone().into();
+        let header_hash = self.hash_on_disk::<omaha::Sha256>(from_path, Some(header_data_length))?;
+        let header_hash_vec: Vec<u8> = header_hash.clone().into();
 
         // TODO: Should take an error. This requires removing anyhow dep from
         //      `update-format-crau` as well
-        // Extract data blobs into a file, datablobspath.
-        delta_update::get_data_blobs(&upfile, &header, &delta_archive_manifest, datablobspath.as_path()).map_err(|_| Error::GetDataBlobsPath)?;
+        // Extract data blobs into a file, data_blob_path.
+        delta_update::get_data_blobs(&update_file, &header, &delta_archive_manifest, data_blob_path.as_path()).map_err(|_| Error::GetDataBlobsPath)?;
 
         // Check for hash of data blobs with new_partition_info hash.
         let pinfo_hash = &delta_archive_manifest.new_partition_info.hash.as_ref().ok_or(Error::MissingNewPartitionInfoHash)?;
 
-        let datahash = self.hash_on_disk::<omaha::Sha256>(datablobspath.as_path(), None)?;
-        if datahash != pinfo_hash.as_slice() {
-            return Err(Error::DataAndPartitionInfoHashMismatch(datahash, pinfo_hash.to_vec()));
+        let data_hash = self.hash_on_disk::<omaha::Sha256>(data_blob_path.as_path(), None)?;
+        if data_hash != pinfo_hash.as_slice() {
+            return Err(Error::DataAndPartitionInfoHashMismatch(data_hash, pinfo_hash.to_vec()));
         }
 
         // Parse signature data from sig blobs, data blobs, public key, and verify.
-        match delta_update::parse_signature_data(&sigbytes, hdhashvec.as_slice(), pubkey_path) {
+        match delta_update::parse_signature_data(&signature_bytes, header_hash_vec.as_slice(), pubkey_path) {
             Ok(_) => {
                 println!("Parsed and verified signature data from file {from_path:?}");
                 self.status = PackageStatus::Verified;
-                Ok(datablobspath)
+                Ok(data_blob_path)
             }
             Err(_) => {
                 self.status = PackageStatus::BadSignature;
                 // TODO: Should take an error. This requires removing anyhow dep from
                 //      `update-format-crau` as well
-                Err(Error::ParseSignature(sigbytes, hdhash, pubkey_path.to_string()))
+                Err(Error::ParseSignature(signature_bytes, header_hash, pubkey_path.to_string()))
             }
         }
     }
