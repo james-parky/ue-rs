@@ -131,7 +131,7 @@ impl<'a> Package<'a> {
         debug!("    calculated sha1: {calculated_sha1:?}");
         debug!("    sha1 match?      {}", self.hash_sha1 == Some(calculated_sha1));
 
-        if self.hash_sha256.is_some() && self.hash_sha256 != Some(calculated_sha256.clone()) || self.hash_sha1.is_some() && self.hash_sha1 != Some(calculated_sha1.clone()) {
+        if self.hash_sha256.is_some_and(|hash| hash != calculated_sha256) || self.hash_sha1.is_some_and(|hash| hash != calculated_sha1) {
             self.status = PackageStatus::BadChecksum;
             false
         } else {
