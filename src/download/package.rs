@@ -187,6 +187,7 @@ impl<'a> Package<'a> {
             return Err(Error::DataAndPartitionInfoHashMismatch(data_hash, pinfo_hash.to_vec()));
         }
 
+        // TODO: why are we ignoring return value here anyway?
         // Parse signature data from sig blobs, data blobs, public key, and verify.
         delta_update::parse_signature_data(&signature_bytes, &header_hash, pubkey_path)
             .map_err(|_| {
