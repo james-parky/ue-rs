@@ -155,7 +155,6 @@ where
 
 fn do_download_verify(pkg: &mut Package<'_>, output_filename: Option<String>, output_dir: &Path, unverified_dir: &Path, pubkey_file: &str, client: &Client) -> Result<()> {
     pkg.check_download(unverified_dir)?;
-
     pkg.download(unverified_dir, client)?;
 
     // Unverified payload is stored in e.g. "output_dir/.unverified/oem.gz".
@@ -163,11 +162,11 @@ fn do_download_verify(pkg: &mut Package<'_>, output_filename: Option<String>, ou
     let pkg_unverified = unverified_dir.join(&*pkg.name);
     let pkg_verified = output_dir.join(output_filename.as_ref().map(OsStr::new).unwrap_or(pkg_unverified.with_extension("raw").file_name().unwrap_or_default()));
 
-    let datablobspath = pkg.verify_signature_on_disk(&pkg_unverified, pubkey_file)?;
+    let data_blob_path = pkg.verify_signature_on_disk(&pkg_unverified, pubkey_file)?;
 
-    // write extracted data into the final data.
+    // Write extracted data into the final data.
     debug!("data blobs written into file {pkg_verified:?}");
-    fs::rename(datablobspath, pkg_verified).map_err(Error::RenameFile)
+    fs::rename(data_blob_path, pkg_verified).map_err(Error::RenameFile)
 }
 
 pub struct DownloadVerify {
