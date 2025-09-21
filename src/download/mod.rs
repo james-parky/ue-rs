@@ -109,7 +109,7 @@ where
     Url: From<U>,
 {
     crate::retry_loop(
-        || do_download_and_hash(client, url.clone(), path, expected_sha256.clone(), expected_sha1.clone()),
+        || do_download_and_hash(client, url.clone(), path, expected_sha256, expected_sha1),
         MAX_DOWNLOAD_RETRY,
     )
 }
