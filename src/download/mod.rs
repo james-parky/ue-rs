@@ -138,7 +138,7 @@ fn get_pkgs_to_download<'a>(resp: &'a omaha::Response, glob_set: &GlobSet) -> Re
 // Read data from remote URL into File
 fn fetch_url_to_file<'a, U>(path: &'a Path, input_url: U, client: &'a Client) -> Result<Package<'a>>
 where
-    U: reqwest::IntoUrl + From<U> + std::clone::Clone + std::fmt::Debug,
+    U: reqwest::IntoUrl + From<U> + Clone + std::fmt::Debug,
     Url: From<U>,
 {
     let r = download_and_hash(client, input_url.clone(), path, None, None)?;
