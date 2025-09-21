@@ -108,6 +108,8 @@ where
     U: reqwest::IntoUrl + Clone,
     Url: From<U>,
 {
+    const MAX_DOWNLOAD_RETRY: u32 = 20;
+
     crate::retry_loop(
         || do_download_and_hash(client, url.clone(), path, expected_sha256, expected_sha1),
         MAX_DOWNLOAD_RETRY,
