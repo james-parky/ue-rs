@@ -188,18 +188,17 @@ impl<'a> Package<'a> {
         }
 
         // Parse signature data from sig blobs, data blobs, public key, and verify.
-        match delta_update::parse_signature_data(&signature_bytes, &header_hash, pubkey_path) {
-            Ok(_) => {
-                println!("Parsed and verified signature data from file {from_path:?}");
-                self.status = PackageStatus::Verified;
-                Ok(data_blob_path)
-            }
-            Err(_) => {
+        delta_update::parse_signature_data(&signature_bytes, &header_hash, pubkey_path)
+            .map_err(|_| {
                 self.status = PackageStatus::BadSignature;
                 // TODO: Should take an error. This requires removing anyhow dep from
                 //      `update-format-crau` as well
-                Err(Error::ParseSignature(signature_bytes, header_hash, pubkey_path.to_string()))
-            }
-        }
+                Error::ParseSignature(signature_bytes, header_hash, pubkey_path.to_string())
+            })
+            .map(|_| {
+                println!("Parsed and verified signature data from file {from_path:?}");
+                self.status = PackageStatus::Verified;
+                data_blob_path
+            })
     }
 }
