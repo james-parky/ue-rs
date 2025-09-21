@@ -19,9 +19,6 @@ use crate::Result;
 use crate::{Package, PackageStatus};
 use omaha::{Sha1Digest, Sha256Digest};
 
-const DOWNLOAD_TIMEOUT: u64 = 3600;
-const HTTP_CONN_TIMEOUT: u64 = 20;
-
 pub const TARGET_FILENAME_DEFAULT: &str = "oem-azure.gz";
 pub const PAYLOAD_URL_DEFAULT: &str = "https://update.release.flatcar-linux.net/amd64-usr/current/oem-azure.gz";
 
@@ -211,6 +208,8 @@ impl DownloadVerify {
     pub fn run(&self) -> Result<()> {
         const UNVERIFIED_SUFFIX: &str = ".unverified";
         const TMP_SUFFIX: &str = ".tmp";
+        const DOWNLOAD_TIMEOUT: u64 = 3600;
+        const HTTP_CONN_TIMEOUT: u64 = 20;
 
         let output_dir = Path::new(&self.output_dir);
 
