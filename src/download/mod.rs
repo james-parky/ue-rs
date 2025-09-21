@@ -76,10 +76,6 @@ where
         _ => {}
     }
 
-    let mut file = File::create(path).map_err(Error::CreateFile)?;
-
-    res.copy_to(&mut file).map_err(Error::WriteResponse)?;
-
     let calculated_sha256 = hash_on_disk::<omaha::Sha256>(path, None)?;
     let calculated_sha1 = hash_on_disk::<omaha::Sha1>(path, None)?;
 
@@ -98,6 +94,8 @@ where
         return Err(Error::Sha1ChecksumMismatch(exp, calculated_sha1));
     }
 
+    let mut file = File::create(path).map_err(Error::CreateFile)?;
+    res.copy_to(&mut file).map_err(Error::WriteResponse)?;
     Ok(DownloadResult {
         hash_sha256: calculated_sha256,
         hash_sha1: calculated_sha1,
