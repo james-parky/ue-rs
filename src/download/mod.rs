@@ -83,11 +83,11 @@ where
     let calculated_sha256 = hash_on_disk::<omaha::Sha256>(path, None)?;
     let calculated_sha1 = hash_on_disk::<omaha::Sha1>(path, None)?;
 
-    debug!("    expected sha256:   {expected_sha256:?}");
-    debug!("    calculated sha256: {calculated_sha256:?}");
+    debug!("    expected sha256:   {expected_sha256:x?}");
+    debug!("    calculated sha256: {calculated_sha256:x?}");
     debug!("    sha256 match?      {}", expected_sha256 == Some(calculated_sha256));
-    debug!("    expected sha1:   {expected_sha1:?}");
-    debug!("    calculated sha1: {calculated_sha1:?}");
+    debug!("    expected sha1:   {expected_sha1:x?}");
+    debug!("    calculated sha1: {calculated_sha1:x?}");
     debug!("    sha1 match?      {}", expected_sha1 == Some(calculated_sha1));
 
     if let Some(exp) = expected_sha256.filter(|&sha256| sha256 != calculated_sha256) {
