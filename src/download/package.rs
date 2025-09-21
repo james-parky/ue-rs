@@ -126,10 +126,10 @@ impl<'a> Package<'a> {
     fn verify_checksum(&mut self, calculated_sha256: Sha256Digest, calculated_sha1: Sha1Digest) -> bool {
         debug!("    expected sha256:   {:?}", self.hash_sha256);
         debug!("    calculated sha256: {calculated_sha256:?}");
-        debug!("    sha256 match?      {}", self.hash_sha256 == Some(calculated_sha256.clone()));
+        debug!("    sha256 match?      {}", self.hash_sha256 == Some(calculated_sha256));
         debug!("    expected sha1:   {:?}", self.hash_sha1);
         debug!("    calculated sha1: {calculated_sha1:?}");
-        debug!("    sha1 match?      {}", self.hash_sha1 == Some(calculated_sha1.clone()));
+        debug!("    sha1 match?      {}", self.hash_sha1 == Some(calculated_sha1));
 
         if self.hash_sha256.is_some() && self.hash_sha256 != Some(calculated_sha256.clone()) || self.hash_sha1.is_some() && self.hash_sha1 != Some(calculated_sha1.clone()) {
             self.status = PackageStatus::BadChecksum;
