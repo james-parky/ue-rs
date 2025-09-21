@@ -11,3 +11,7 @@ mod util;
 pub use util::retry_loop;
 
 pub mod request;
+
+pub mod error;
+
+pub type Result<T> = std::result::Result<T, error::Error>;
