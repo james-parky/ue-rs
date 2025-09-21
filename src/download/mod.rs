@@ -32,40 +32,39 @@ pub struct DownloadResult {
     pub data: File,
 }
 
-pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, maxlen: Option<usize>) -> Result<T::Output> {
+pub fn hash_on_disk<T: omaha::Hasher>(path: &Path, max_len: Option<usize>) -> Result<T::Output> {
     let file = File::open(path).map_err(Error::OpenFile)?;
+    let file_len = file.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
 
-    let filelen = file.metadata().map_err(Error::ReadFileMetadata)?.len() as usize;
-
-    let mut maxlen_to_read: usize = match maxlen {
+    let mut remaining_bytes_to_read: usize = match max_len {
         Some(len) => {
-            if filelen < len {
-                filelen
+            if file_len < len {
+                file_len
             } else {
                 len
             }
         }
-        None => filelen,
+        None => file_len,
     };
 
     let mut hasher = T::new();
 
-    const CHUNKLEN: usize = 10485760; // 10M
+    const CHUNK_LEN: usize = 10485760; // 10M
 
-    let mut freader = BufReader::new(file);
-    let mut databuf = vec![0u8; CHUNKLEN];
+    let mut reader = BufReader::new(file);
+    let mut buf = vec![0u8; CHUNK_LEN];
 
-    while maxlen_to_read > 0 {
-        if maxlen_to_read < CHUNKLEN {
+    while remaining_bytes_to_read > 0 {
+        if remaining_bytes_to_read < CHUNK_LEN {
             // last and submaximal chunk to read, shrink the buffer for it
-            databuf.truncate(maxlen_to_read);
+            buf.truncate(remaining_bytes_to_read);
         }
 
-        freader.read_exact(&mut databuf).map_err(|err| Error::ReadFileChunk(CHUNKLEN, err))?;
+        reader.read_exact(&mut buf).map_err(|err| Error::ReadFileChunk(CHUNK_LEN, err))?;
 
-        maxlen_to_read -= databuf.len();
+        remaining_bytes_to_read -= buf.len();
 
-        hasher.update(&databuf);
+        hasher.update(&buf);
     }
 
     Ok(hasher.finalize())
