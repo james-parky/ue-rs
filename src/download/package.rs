@@ -46,7 +46,6 @@ impl<'a> Package<'a> {
         }
     }
 
-    #[rustfmt::skip]
     // Return Sha256 hash of data in the given path.
     // If maxlen is None, a simple read to the end of the file.
     // If maxlen is Some, read only until the given length.
@@ -54,7 +53,6 @@ impl<'a> Package<'a> {
         hash_on_disk::<T>(path, maxlen)
     }
 
-    #[rustfmt::skip]
     pub fn check_download(&mut self, in_dir: &Path) -> Result<()> {
         let path = in_dir.join(&*self.name);
 
@@ -70,7 +68,12 @@ impl<'a> Package<'a> {
         let expected_size = self.size;
 
         if size_on_disk < expected_size {
-            info!("{}: have downloaded {}/{} bytes, will resume", path.display(), size_on_disk, expected_size);
+            info!(
+                "{}: have downloaded {}/{} bytes, will resume",
+                path.display(),
+                size_on_disk,
+                expected_size
+            );
 
             self.status = PackageStatus::DownloadIncomplete(size_on_disk);
             return Ok(());
