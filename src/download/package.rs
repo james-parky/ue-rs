@@ -55,6 +55,20 @@ impl<'a> Package<'a> {
         hash_on_disk::<T>(path, max_len)
     }
 
+    fn verify_download(&mut self, path: &Path) -> Result<()> {
+        let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(path, None)?;
+        let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(path, None)?;
+
+        if self.verify_checksum(hash_sha256, hash_sha1) {
+            info!("{}: good hash, will continue without re-download", path.display());
+        } else {
+            info!("{}: bad hash, will re-download", path.display());
+            self.status = PackageStatus::ToDownload;
+        }
+
+        Ok(())
+    }
+
     pub fn check_download(&mut self, in_dir: &Path) -> Result<()> {
         let path = in_dir.join(&*self.name);
 
@@ -80,14 +94,7 @@ impl<'a> Package<'a> {
             }
             Ordering::Equal => {
                 info!("{}: download complete, checking hash...", path.display());
-                let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(&path, None)?;
-                let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(&path, None)?;
-                if self.verify_checksum(hash_sha256, hash_sha1) {
-                    info!("{}: good hash, will continue without re-download", path.display());
-                } else {
-                    info!("{}: bad hash, will re-download", path.display());
-                    self.status = PackageStatus::ToDownload;
-                }
+                self.verify_download(&path)?;
             }
             Ordering::Greater => {
                 // TODO: should probably return an error here
