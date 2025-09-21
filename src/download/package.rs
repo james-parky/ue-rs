@@ -59,7 +59,7 @@ impl<'a> Package<'a> {
         let hash_sha256 = self.hash_on_disk::<omaha::Sha256>(path, None)?;
         let hash_sha1 = self.hash_on_disk::<omaha::Sha1>(path, None)?;
 
-        if self.verify_checksum(hash_sha256, hash_sha1) {
+        if self.verify_checksums(hash_sha256, hash_sha1) {
             info!("{}: good hash, will continue without re-download", path.display());
         } else {
             info!("{}: bad hash, will re-download", path.display());
@@ -123,15 +123,21 @@ impl<'a> Package<'a> {
         .map(|_| self.status = PackageStatus::Unverified)
     }
 
-    fn verify_checksum(&mut self, calculated_sha256: Sha256Digest, calculated_sha1: Sha1Digest) -> bool {
-        debug!("    expected sha256:   {:?}", self.hash_sha256);
-        debug!("    calculated sha256: {calculated_sha256:?}");
-        debug!("    sha256 match?      {}", self.hash_sha256 == Some(calculated_sha256));
-        debug!("    expected sha1:   {:?}", self.hash_sha1);
-        debug!("    calculated sha1: {calculated_sha1:?}");
-        debug!("    sha1 match?      {}", self.hash_sha1 == Some(calculated_sha1));
+    fn verify_checksum<H: omaha::Hasher>(exp: H::Output, got: H::Output) -> bool {
+        let same = exp == got;
 
-        if self.hash_sha256.is_some_and(|hash| hash != calculated_sha256) || self.hash_sha1.is_some_and(|hash| hash != calculated_sha1) {
+        debug!("    expected {}:   {exp:?}", H::HASH_NAME);
+        debug!("    calculated {}: {got:?}", H::HASH_NAME);
+        debug!("    {same} match?      {}", H::HASH_NAME);
+
+        same
+    }
+
+    fn verify_checksums(&mut self, calculated_sha256: Sha256Digest, calculated_sha1: Sha1Digest) -> bool {
+        let sha1_same = self.hash_sha1.is_some_and(|hash| Self::verify_checksum::<omaha::Sha1>(hash, calculated_sha1));
+        let sha256_same = self.hash_sha256.is_some_and(|hash| Self::verify_checksum::<omaha::Sha256>(hash, calculated_sha256));
+
+        if !sha1_same || !sha256_same {
             self.status = PackageStatus::BadChecksum;
             false
         } else {
